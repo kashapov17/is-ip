@@ -3,7 +3,7 @@
 import sys
 import argparse
 import string
-import sympy as np
+import sympy as sp
 from enum import Enum
 
 appname = "hillpher"
@@ -25,29 +25,24 @@ def encode(plaintext, key):
     keyPower = int(len(key)**0.5)
     plaintext = textCompletion(plaintext, keyPower)
 
-    keyMatrix = createMatrixFromStr(key, keyPower)
-   
     ciphertext = ""
     for i in range(int(len(plaintext) / keyPower)):
         ciphertext += createStrFromMatrix(
-            (createMatrixFromStr(plaintext[keyPower*i:keyPower*(i+1)], 1) * keyMatrix)
+            (createMatrixFromStr(plaintext[keyPower*i:keyPower*(i+1)], 1) 
+             * createMatrixFromStr(key, keyPower))
             % len(alph)
             )
-    
+
     return ciphertext
 
 def decode(ciphertext, key):
     keyPower = int(len(key)**0.5)
-    keyMatrix = createMatrixFromStr(key, keyPower)
-    det = int(np.det(keyMatrix))
-    detInv = multInvMod(det, len(alph))
-
-    keyMatrixInvMod = invMatrixMod(keyMatrix, detInv, len(alph))  
     
     plaintext = ""
     for i in range(int(len(ciphertext) / keyPower)):
         plaintext += createStrFromMatrix(
-            (createMatrixFromStr(ciphertext[keyPower*i:keyPower*(i+1)], 1) * keyMatrixInvMod)
+            (createMatrixFromStr(ciphertext[keyPower*i:keyPower*(i+1)], 1) 
+             * invMatrixMod(createMatrixFromStr(key, keyPower), len(alph)))
             % len(alph)
             )
     
@@ -80,7 +75,7 @@ def createMatrixFromStr(string, order):
     m = list(string)
     for i,l in enumerate(m):
         m[i] = int(alph.find(l))
-    m = np.Matrix(m)
+    m = sp.Matrix(m)
     if order != 1:
         m = m.reshape(order, order)
     else:
@@ -94,14 +89,12 @@ def createStrFromMatrix(m):
     return string
 
 def gcdExtended(a, b):  
-    if a == 0 :   
-        return b,0,1
-             
-    gcd,x1,y1 = gcdExtended(b%a, a)  
-    
-    x = y1 - (b//a) * x1  
-    y = x1
-    return gcd,x,y
+    if b == 0:
+        return a, 1, 0
+    else:
+        d, x, y = gcdExtended(b, a % b)
+        return d, y, x - y * (a // b)
+
 
 def multInvMod(num, mod):
     gcd,x,y = gcdExtended(num, mod)
@@ -109,27 +102,44 @@ def multInvMod(num, mod):
         return x
     elif x < 0:
         if num > 0:
-            return mod+x
-        elif num < 0:
             return -x
+        elif num < 0:
+            return mod+x
 
-def invMatrixMod(m, detInv, mod):
+def invMatrixMod(m, mod):
+    det = int(sp.det(m))
+    detInv = multInvMod(det, mod)
     return (m.adjugate() % mod) * detInv % mod
+
+def checkInput(key, plaintext, ciphertext):
+    isAlphConsistOf(plaintext)
+    isAlphConsistOf(ciphertext)
+    isAlphConsistOf(key)
+    
+    keyMatrix = createMatrixFromStr(args.key, int(len(args.key)**0.5))
+    det = sp.det(keyMatrix)
+    gcd,x,y = gcdExtended(sp.det(keyMatrix), len(alph))
+    if det == 0:
+        print("Error: bad key, choose another one [zero-determinant]")
+        sys.exit()
+    elif x == 0:
+        print("Error: bad key, choose another one [inverse mult doesn't exist]")
+        sys.exit()
     
 if __name__ == "__main__":
    
-    parser = argparse.ArgumentParser(description='Hill\'s encryptor and decryptor.')
+    parser = argparse.ArgumentParser(description="Hill\'s encryptor and decryptor.")
    
     mutexgr = parser.add_mutually_exclusive_group(required=True)
     mutexgr.add_argument(
             "-t", "--text", 
-            help="specified the plaintext witch will encrypted", 
+            help="specified the plaintext which will encrypted", 
             dest="plaintext", 
             type=str
             )
     mutexgr.add_argument(
             "-c", "--cipher", 
-            help="specified the ciphertext witch will decrypted", 
+            help="specified the ciphertext which will decrypted", 
             dest="ciphertext", 
             type=str
             )
@@ -142,21 +152,14 @@ if __name__ == "__main__":
     parser.add_argument(
             "-v", "--version", 
             help="output version information and exit", 
-            action='version', 
-            version='{} {}'.format(appname, appver)
+            action="version", 
+            version="{} {}".format(appname, appver)
             )
 
     args = parser.parse_args()
     op = operation(args.plaintext == None) 
-
-    isAlphConsistOf(args.plaintext)
-    isAlphConsistOf(args.ciphertext)
-    isAlphConsistOf(args.key)
-   
     args.key = keyCompletion(args.key)
-    if np.det(createMatrixFromStr(args.key, int(len(args.key)**0.5))) == 0:
-        print("Error: bad key, choose another one")
-        sys.exit()
+    checkInput(args.key, args.plaintext, args.ciphertext)
 
     if op == operation.decode: 
         main(decode(args.ciphertext, args.key))
