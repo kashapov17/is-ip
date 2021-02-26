@@ -1,17 +1,18 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import sys
 import argparse
 import string
 import sympy as sp
+import math
 from enum import Enum
 
 appname = "hillpher"
-appver = "0.1"
+appver = "0.2"
 
-alph = (string.digits + string.ascii_letters + string.punctuation + " ").replace("$", "").replace("&", "")
-#alph = string.digits+string.ascii_letters+",.() "
-keyPower = 32 #max key lengh = 2^32 = about 4 billion
+#alph = (string.digits + string.ascii_letters + string.punctuation + " №¦")
+alph = string.digits+string.ascii_letters+",.() "
+keyPower = 32 #max key length = 2^32 = about 4 billion
 
 class operation(Enum):
     encode = 0
@@ -50,10 +51,10 @@ def decode(ciphertext, key):
 
 def keyCompletion(key):
     for i in range(1, keyPower):
-        keyLenght = len(key)
-        if keyLenght <= i**2:
+        keyLength = len(key)
+        if keyLength <= i**2:
             offset = alph.find('a')
-            for j in range(offset, i**2 - keyLenght + offset):
+            for j in range(offset, i**2 - keyLength + offset):
                 key += alph[j]
             break
     return key
@@ -62,14 +63,6 @@ def textCompletion(text, keyPower):
     while(len(text) % keyPower):
         text += " "
     return text
-
-def isAlphConsistOf(string):
-    if string != None:
-        for l in string:
-            if alph.find(l) == -1:
-                print("Error: symbol \'{}\' not contained in the alphabet".format(l))
-                print("Allowable set of symbols: {}".format(tuple(alph)))
-                sys.exit()
 
 def createMatrixFromStr(string, order):
     m = list(string)
@@ -95,21 +88,25 @@ def gcdExtended(a, b):
         d, x, y = gcdExtended(b, a % b)
         return d, y, x - y * (a // b)
 
-
 def multInvMod(num, mod):
     gcd,x,y = gcdExtended(num, mod)
     if x > 0:
         return x
-    elif x < 0:
-        if num > 0:
-            return -x
-        elif num < 0:
-            return mod+x
+    else:
+        return mod+x
 
 def invMatrixMod(m, mod):
     det = int(sp.det(m))
     detInv = multInvMod(det, mod)
     return (m.adjugate() % mod) * detInv % mod
+
+def isAlphConsistOf(string):
+    if string != None:
+        for l in string:
+            if alph.find(l) == -1:
+                print("Error: symbol \'{}\' not contained in the alphabet".format(l))
+                print("Allowable set of symbols: {}".format(tuple(alph)))
+                sys.exit(1)
 
 def checkInput(key, plaintext, ciphertext):
     isAlphConsistOf(plaintext)
@@ -118,13 +115,13 @@ def checkInput(key, plaintext, ciphertext):
     
     keyMatrix = createMatrixFromStr(args.key, int(len(args.key)**0.5))
     det = sp.det(keyMatrix)
-    gcd,x,y = gcdExtended(sp.det(keyMatrix), len(alph))
     if det == 0:
         print("Error: bad key, choose another one [zero-determinant]")
-        sys.exit()
-    elif x == 0:
-        print("Error: bad key, choose another one [inverse mult doesn't exist]")
-        sys.exit()
+        sys.exit(1)
+    elif math.gcd(det, len(alph)) != 1:
+        print("Error: bad key, choose another one [modular mult inverse doesn't exist].\n"
+            "The Greatest Common Divisor between determinant of key matrix({}) and alphabet length({}) must be 1".format(det, len(alph)))
+        sys.exit(1)
     
 if __name__ == "__main__":
    
@@ -133,13 +130,13 @@ if __name__ == "__main__":
     mutexgr = parser.add_mutually_exclusive_group(required=True)
     mutexgr.add_argument(
             "-t", "--text", 
-            help="specified the plaintext which will encrypted", 
+            help="defines the plaintext for encryption", 
             dest="plaintext", 
             type=str
             )
     mutexgr.add_argument(
             "-c", "--cipher", 
-            help="specified the ciphertext which will decrypted", 
+            help="defines the ciphertext for decryption", 
             dest="ciphertext", 
             type=str
             )
@@ -147,6 +144,7 @@ if __name__ == "__main__":
             "-k", "--key", 
             help="cryptor key", 
             dest="key", 
+            type=str,
             required=True
             )
     parser.add_argument(
