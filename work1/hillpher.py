@@ -3,15 +3,14 @@
 import sys
 import argparse
 import string
-import sympy as sp
+import sympy
 import math
 from enum import Enum
 
 appname = "hillpher"
-appver = "0.2"
+appver = "0.3"
 
-#alph = (string.digits + string.ascii_letters + string.punctuation + " №¦")
-alph = string.digits+string.ascii_letters+",.() "
+alph = (string.digits + string.ascii_letters + string.punctuation + " №®")
 keyPower = 32 #max key length = 2^32 = about 4 billion
 
 class operation(Enum):
@@ -68,7 +67,7 @@ def createMatrixFromStr(string, order):
     m = list(string)
     for i,l in enumerate(m):
         m[i] = int(alph.find(l))
-    m = sp.Matrix(m)
+    m = sympy.Matrix(m)
     if order != 1:
         m = m.reshape(order, order)
     else:
@@ -90,15 +89,12 @@ def gcdExtended(a, b):
 
 def multInvMod(num, mod):
     gcd,x,y = gcdExtended(num, mod)
-    if x > 0:
-        return x
-    else:
-        return mod+x
+    return (x if x > 0 else mod+x)
 
 def invMatrixMod(m, mod):
-    det = int(sp.det(m))
+    det = int(sympy.det(m))
     detInv = multInvMod(det, mod)
-    return (m.adjugate() % mod) * detInv % mod
+    return (m.adjugate() * detInv) % mod
 
 def isAlphConsistOf(string):
     if string != None:
@@ -114,7 +110,7 @@ def checkInput(key, plaintext, ciphertext):
     isAlphConsistOf(key)
     
     keyMatrix = createMatrixFromStr(args.key, int(len(args.key)**0.5))
-    det = sp.det(keyMatrix)
+    det = sympy.det(keyMatrix)
     if det == 0:
         print("Error: bad key, choose another one [zero-determinant]")
         sys.exit(1)
@@ -129,37 +125,37 @@ if __name__ == "__main__":
    
     mutexgr = parser.add_mutually_exclusive_group(required=True)
     mutexgr.add_argument(
-            "-t", "--text", 
-            help="defines the plaintext for encryption", 
-            dest="plaintext", 
+            "-t", "--text",
+            help="defines the plaintext for encryption",
+            dest="plaintext",
             type=str
             )
     mutexgr.add_argument(
-            "-c", "--cipher", 
-            help="defines the ciphertext for decryption", 
-            dest="ciphertext", 
+            "-c", "--cipher",
+            help="defines the ciphertext for decryption",
+            dest="ciphertext",
             type=str
             )
     parser.add_argument(
-            "-k", "--key", 
-            help="cryptor key", 
-            dest="key", 
+            "-k", "--key",
+            help="cryptor key",
+            dest="key",
             type=str,
             required=True
             )
     parser.add_argument(
-            "-v", "--version", 
-            help="output version information and exit", 
-            action="version", 
+            "-v", "--version",
+            help="output version information and exit",
+            action="version",
             version="{} {}".format(appname, appver)
             )
 
     args = parser.parse_args()
-    op = operation(args.plaintext == None) 
+    op = operation(args.plaintext == None)
     args.key = keyCompletion(args.key)
     checkInput(args.key, args.plaintext, args.ciphertext)
 
-    if op == operation.decode: 
+    if op == operation.decode:
         main(decode(args.ciphertext, args.key))
     else:
-        main(encode(args.plaintext, args.key))    
+        main(encode(args.plaintext, args.key))
