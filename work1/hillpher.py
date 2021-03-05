@@ -18,7 +18,7 @@ class operation(Enum):
     decode = 1
 
 def main(result):
-    print(result)
+    print("\'{}\'".format(result))
     return 0
 
 def encode(plaintext, key):
@@ -114,7 +114,7 @@ def checkInput(key, plaintext, ciphertext):
     if math.gcd(det, len(alph)) != 1:
         print("Error: bad key, choose another one [modular multiplicative inverse doesn't exist].\n"
             "The Greatest Common Divisor between determinant of key matrix({}) and alphabet length({}) must be 1".format(det, len(alph)))
-        sys.exit(129) # key was rejected by service
+        sys.exit(129)
     
 if __name__ == "__main__":
    
