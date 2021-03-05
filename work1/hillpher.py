@@ -8,7 +8,7 @@ import math
 from enum import Enum
 
 appname = "hillpher"
-appver = "0.3"
+appver = "1.0"
 
 alph = (string.digits + string.ascii_letters + string.punctuation + " №®")
 keyPower = 32 #max key length = 2^32 = about 4 billion
@@ -18,7 +18,7 @@ class operation(Enum):
     decode = 1
 
 def main(result):
-    print("\'{}\'".format(result))
+    print(result)
     return 0
 
 def encode(plaintext, key):
@@ -111,10 +111,10 @@ def checkInput(key, plaintext, ciphertext):
     
     keyMatrix = createMatrixFromStr(args.key, int(len(args.key)**0.5))
     det = sympy.det(keyMatrix)
-    elif math.gcd(det, len(alph)) != 1:
+    if math.gcd(det, len(alph)) != 1:
         print("Error: bad key, choose another one [modular multiplicative inverse doesn't exist].\n"
             "The Greatest Common Divisor between determinant of key matrix({}) and alphabet length({}) must be 1".format(det, len(alph)))
-        sys.exit(1)
+        sys.exit(129) # key was rejected by service
     
 if __name__ == "__main__":
    
