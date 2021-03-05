@@ -16,18 +16,20 @@ for i in {1..100}
     #генерируем плэйнтекст
     text=$(textgen)
     #шифруем плэйнтекст
-    chiphertext=$(./$1 -k "$key" -t "$text" | sed 's/^.//;s/.$//')
+    ciphertext=$(./$1 -k "$key" -t "$text")
+    retVal=$?
+    ciphertext=$(echo $ciphertext | sed 's/^.//;s/.$//')
 
-    if [[ $? == 129 ]]; then
+    if [[ $retVal == 129 ]]; then
         #wooops, детерминант ключевой матрицы, помимо единицы, имеет другие делители с размером алфавита. Обратный элемент в кольце вычетов по модулю $len(alph) не существует!
-        echo "$i: bad key was generated ($key)"
+        echo "[WARN] $i: bad key was generated ($key)"
         continue
     fi
     #дешифруем полученный шифротекст
-    plaintext=$(./$1 -k "$key" -c "$chiphertext" | sed 's/^.//;s/.$//' | xargs)
+    plaintext=$(./$1 -k "$key" -c "$ciphertext" | sed 's/^.//;s/.$//' | xargs)
     if [[ $plaintext == $text ]]; then
-        echo "$i:'$text' -> '$chiphertext' -> '$plaintext' with '$key' key is OK"
+        echo "[OK] $i: '$text' -> '$ciphertext' -> '$plaintext' with '$key' key"
     else
-        echo "$i:'$text' -> '$chiphertext' -> '$plaintext' with '$key' key is WRONG"
+        echo "[WRONG] $i: '$text' -> '$ciphertext' -> '$plaintext' with '$key' key"
     fi
     done
