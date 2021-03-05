@@ -111,11 +111,8 @@ def checkInput(key, plaintext, ciphertext):
     
     keyMatrix = createMatrixFromStr(args.key, int(len(args.key)**0.5))
     det = sympy.det(keyMatrix)
-    if det == 0:
-        print("Error: bad key, choose another one [zero-determinant]")
-        sys.exit(1)
     elif math.gcd(det, len(alph)) != 1:
-        print("Error: bad key, choose another one [modular mult inverse doesn't exist].\n"
+        print("Error: bad key, choose another one [modular multiplicative inverse doesn't exist].\n"
             "The Greatest Common Divisor between determinant of key matrix({}) and alphabet length({}) must be 1".format(det, len(alph)))
         sys.exit(1)
     
