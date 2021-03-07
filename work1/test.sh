@@ -3,9 +3,6 @@
 
 function textgen {
     randomtext=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w $(shuf -i 1-20 -n 1) | head -1)
-    if [[ randomtext == "" ]]; then
-        textgen
-    fi
     echo $randomtext
 }
 
@@ -16,7 +13,7 @@ for i in {1..100}
     #генерируем плэйнтекст
     text=$(textgen)
     #шифруем плэйнтекст
-    ciphertext=$(./$1 -k "$key" -t "$text")
+    ciphertext=$(./$1 -k="$key" -t="$text")
     retVal=$?
     ciphertext=$(echo $ciphertext | sed 's/^.//;s/.$//')
 
@@ -26,7 +23,7 @@ for i in {1..100}
         continue
     fi
     #дешифруем полученный шифротекст
-    plaintext=$(./$1 -k "$key" -c "$ciphertext" | sed 's/^.//;s/.$//' | xargs)
+    plaintext=$(./$1 -k="$key" -c="$ciphertext" | sed 's/^.//;s/.$//' | xargs)
     if [[ $plaintext == $text ]]; then
         echo "[OK] $i: '$text' -> '$ciphertext' -> '$plaintext' with '$key' key"
     else
