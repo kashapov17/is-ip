@@ -151,7 +151,7 @@ if __name__ == "__main__":
     op = operation(args.plaintext == None)
     args.key = keyCompletion(args.key)
     checkInput(args.key, args.plaintext, args.ciphertext)
-
+    
     if op == operation.decode:
         main(decode(args.ciphertext, args.key))
     else:

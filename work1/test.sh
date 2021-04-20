@@ -29,4 +29,4 @@ for i in {1..100}
     else
         echo "[WRONG] $i: '$text' -> '$ciphertext' -> '$plaintext' with '$key' key"
     fi
-    done
+done
